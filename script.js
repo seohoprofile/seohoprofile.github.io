@@ -156,6 +156,59 @@ document.addEventListener('DOMContentLoaded', function() {
     initNavHighlight();
 });
 
+// 모든 리소스 로드 완료 후 갤러리 재확인 (모바일 대응)
+window.addEventListener('load', function() {
+    fixMobileGallery();
+});
+
+// 화면 방향 변경 시에도 갤러리 수정
+window.addEventListener('orientationchange', function() {
+    setTimeout(fixMobileGallery, 300);
+});
+
+// 모바일 갤러리 표시 문제 해결 함수
+function fixMobileGallery() {
+    const commonGallery = document.getElementById('common-gallery');
+    const gallerySection = document.querySelector('.gallery-section');
+    
+    if (commonGallery) {
+        // 갤러리 섹션과 컨텐츠 모두 강제 표시
+        if (gallerySection) {
+            gallerySection.style.cssText += 'display: block !important; visibility: visible !important; opacity: 1 !important; min-height: 500px !important;';
+        }
+        
+        // 공용 갤러리 강제 표시
+        commonGallery.style.display = 'grid';
+        commonGallery.classList.add('active');
+        
+        // 다른 갤러리는 숨김 상태 확인
+        const blGallery = document.getElementById('bl-gallery');
+        const heteroGallery = document.getElementById('hetero-gallery');
+        if (blGallery && !blGallery.classList.contains('active')) {
+            blGallery.style.display = 'none';
+        }
+        if (heteroGallery && !heteroGallery.classList.contains('active')) {
+            heteroGallery.style.display = 'none';
+        }
+        
+        // 첫 번째 탭도 활성화
+        const firstTab = document.querySelector('.gallery-tab[data-gallery="common"]');
+        if (firstTab) {
+            firstTab.classList.add('active');
+        }
+        
+        // 갤러리 아이템 개수 확인
+        const items = commonGallery.querySelectorAll('.gallery-item');
+        console.log('갤러리 아이템 수:', items.length);
+        
+        // 컨테이너 크기 강제 설정
+        const galleryContent = commonGallery.parentElement;
+        if (galleryContent) {
+            galleryContent.style.cssText += 'min-height: 400px !important; display: block !important;';
+        }
+    }
+}
+
 // 모바일 메뉴 초기화
 function initMobileMenu() {
     const menuToggle = document.querySelector('.mobile-menu-toggle');
@@ -253,7 +306,6 @@ function initPOVToggle() {
 
 // 갤러리 초기화
 function initGallery() {
-    const galleryTabs = document.querySelectorAll('.gallery-tab');
     const modal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImage');
     const modalClose = document.querySelector('.modal-close');
@@ -261,20 +313,13 @@ function initGallery() {
     // 갤러리 이미지 로드
     loadGalleryImages();
     
-    // 갤러리 탭 전환
-    galleryTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const targetGallery = this.getAttribute('data-gallery');
-            
-            // 모든 탭과 그리드 비활성화
-            galleryTabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.gallery-grid').forEach(g => g.classList.remove('active'));
-            
-            // 선택된 탭과 그리드 활성화
-            this.classList.add('active');
-            document.getElementById(`${targetGallery}-gallery`).classList.add('active');
-        });
-    });
+    // 이미지 로드 후 탭 이벤트 설정
+    setTimeout(() => {
+        setupGalleryTabs();
+        
+        // 첫 번째 갤러리 활성화 (탭 설정 후에 실행)
+        activateFirstGallery();
+    }, 100);
     
     // 모달 닫기
     modalClose.addEventListener('click', function() {
@@ -286,6 +331,101 @@ function initGallery() {
             modal.style.display = 'none';
         }
     });
+}
+
+// 갤러리 탭 설정
+function setupGalleryTabs() {
+    const galleryTabs = document.querySelectorAll('.gallery-tab');
+    
+    console.log('갤러리 탭 설정 시작, 탭 개수:', galleryTabs.length);
+    
+    // 각 탭에 대해 이벤트 리스너 등록
+    galleryTabs.forEach((tab, index) => {
+        const gallery = tab.getAttribute('data-gallery');
+        console.log(`탭 ${index}:`, gallery);
+        
+        // onclick으로 직접 등록
+        tab.onclick = function(e) {
+            e.preventDefault();
+            console.log('갤러리 탭 클릭:', gallery);
+            
+            // 모든 탭 비활성화
+            galleryTabs.forEach(t => t.classList.remove('active'));
+            
+            // 모든 갤러리 숨기기
+            document.querySelectorAll('.gallery-grid').forEach(g => {
+                g.classList.remove('active');
+                g.style.display = 'none';
+            });
+            
+            // 클릭한 탭 활성화
+            tab.classList.add('active');
+            
+            // 해당 갤러리 표시
+            const targetGrid = document.getElementById(`${gallery}-gallery`);
+            if (targetGrid) {
+                console.log('타겟 그리드 찾음:', gallery);
+                targetGrid.classList.add('active');
+                targetGrid.style.display = 'grid';
+                
+                // 이미지 개수 확인
+                const images = targetGrid.querySelectorAll('.gallery-item');
+                console.log(`${gallery} 갤러리 이미지 수:`, images.length);
+                
+                // 모바일에서 강제 업데이트
+                if (window.innerWidth <= 768) {
+                    void targetGrid.offsetHeight;
+                    targetGrid.style.minHeight = '300px';
+                }
+            } else {
+                console.error(`${gallery}-gallery 요소를 찾을 수 없습니다!`);
+            }
+        };
+    });
+}
+
+// 첫 번째 갤러리 활성화
+function activateFirstGallery() {
+    const firstTab = document.querySelector('.gallery-tab[data-gallery="common"]');
+    const firstGallery = document.getElementById('common-gallery');
+    
+    if (firstTab && firstGallery) {
+        firstTab.classList.add('active');
+        firstGallery.classList.add('active');
+        // 첫 번째 갤러리만 표시
+        firstGallery.style.display = 'grid';
+        
+        // 다른 갤러리는 숨김
+        const blGallery = document.getElementById('bl-gallery');
+        const heteroGallery = document.getElementById('hetero-gallery');
+        if (blGallery) {
+            blGallery.style.display = 'none';
+            blGallery.classList.remove('active');
+        }
+        if (heteroGallery) {
+            heteroGallery.style.display = 'none';
+            heteroGallery.classList.remove('active');
+        }
+        
+        console.log('첫 번째 갤러리 활성화 완료');
+        
+        // 모바일 뷰포트 업데이트 트리거
+        if (window.innerWidth <= 768) {
+            // 갤러리 컨테이너 높이 명시
+            const galleryContent = firstGallery.parentElement;
+            if (galleryContent) {
+                galleryContent.style.minHeight = '400px';
+            }
+            
+            // 다중 프레임에서 렌더링 강제
+            requestAnimationFrame(() => {
+                firstGallery.style.display = 'none';
+                requestAnimationFrame(() => {
+                    firstGallery.style.display = 'grid';
+                });
+            });
+        }
+    }
 }
 
 // 갤러리 이미지 로드
@@ -314,11 +454,13 @@ function loadGalleryImages() {
         const loadingMsg = blGallery.querySelector('.loading-message');
         if (loadingMsg) loadingMsg.remove();
         
+        console.log('BL 갤러리 이미지 로드 시작:', galleryImages.bl);
         galleryImages.bl.forEach(img => {
             const item = createGalleryItem(`백서호 BL 에셋/${img}`);
             blGallery.appendChild(item);
         });
         console.log('BL 갤러리 로드 완료:', galleryImages.bl.length);
+        console.log('BL 갤러리 실제 아이템 수:', blGallery.querySelectorAll('.gallery-item').length);
     }
     
     // 헤테로 갤러리
@@ -328,12 +470,51 @@ function loadGalleryImages() {
         const loadingMsg = heteroGallery.querySelector('.loading-message');
         if (loadingMsg) loadingMsg.remove();
         
+        console.log('헤테로 갤러리 이미지 로드 시작:', galleryImages.hetero);
         galleryImages.hetero.forEach(img => {
             const item = createGalleryItem(`백서호 HL 에셋/${img}`);
             heteroGallery.appendChild(item);
         });
         console.log('헤테로 갤러리 로드 완료:', galleryImages.hetero.length);
+        console.log('헤테로 갤러리 실제 아이템 수:', heteroGallery.querySelectorAll('.gallery-item').length);
     }
+    
+    // 갤러리 로드 완료 후 레이아웃 강제 업데이트 (모바일 대응)
+    // 여러 타이밍에 시도
+    [100, 300, 500, 1000].forEach(delay => {
+        setTimeout(() => {
+            const commonGallery = document.getElementById('common-gallery');
+            if (commonGallery && window.innerWidth <= 768) {
+                // 갤러리가 여전히 안 보이면
+                if (commonGallery.offsetHeight < 100) {
+                    console.log(`갤러리 높이 수정 시도 (${delay}ms 후)`);
+                    
+                    // 모바일에서 강제로 표시
+                    commonGallery.style.display = 'grid';
+                    commonGallery.classList.add('active');
+                    
+                    // 다른 갤러리는 확실히 숨김
+                    document.querySelectorAll('.gallery-grid:not(#common-gallery)').forEach(g => {
+                        g.style.display = 'none';
+                        g.classList.remove('active');
+                    });
+                    
+                    // 부모 요소들도 확인
+                    const galleryContent = commonGallery.parentElement;
+                    if (galleryContent) {
+                        galleryContent.style.minHeight = '400px';
+                    }
+                    
+                    // 갤러리 섹션 높이 재계산
+                    const gallerySection = document.querySelector('.gallery-section');
+                    if (gallerySection) {
+                        gallerySection.style.minHeight = '500px';
+                        void gallerySection.offsetHeight; // 강제 리플로우
+                    }
+                }
+            }
+        }, delay);
+    });
     
     // 갤러리 아이템 생성 함수
     function createGalleryItem(src) {
@@ -447,4 +628,4 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             });
         }
     });
-}); 
+});

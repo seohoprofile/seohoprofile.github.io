@@ -891,6 +891,10 @@ body {
 /* 갤러리 섹션 */
 .gallery-section {
     background: var(--bg-primary);
+    min-height: 600px;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
 }
 
 .gallery-tabs {
@@ -925,12 +929,20 @@ body {
 }
 
 .gallery-grid.active {
-    display: grid;
+    display: grid !important;
+}
+
+/* 개별 갤러리 ID로도 제어 가능하도록 */
+#bl-gallery.active,
+#hetero-gallery.active,
+#common-gallery.active {
+    display: grid !important;
 }
 
 .gallery-content {
     width: 100%;
     min-height: 400px;
+    position: relative;
 }
 
 .loading-message {
@@ -1146,6 +1158,25 @@ body {
     .gallery-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 1rem;
+        min-height: 200px;
+    }
+    
+    .gallery-content {
+        min-height: 250px;
+    }
+    
+    /* 모바일에서 갤러리 초기 표시 보장 */
+    .gallery-section {
+        min-height: 400px;
+    }
+    
+    /* 모바일에서 갤러리 표시 */
+    .gallery-grid {
+        display: none;
+    }
+    
+    .gallery-grid.active {
+        display: grid !important;
     }
 
     .gallery-item img {
